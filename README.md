@@ -51,7 +51,11 @@ Run the exporter with your credentials. Example:
 
 #### Notes
 
+It will create a new `netatmo_token.json` file containing something like:
+
+  ```json
+  {"access_token":"12345|54321","refresh_token":"67890|09876","expiry":"0001-01-01T00:00:00Z"}
+```
+
 ⚠️ *This fork has been tested with compilation but not with Docker* ⚠️
  
- 
-
