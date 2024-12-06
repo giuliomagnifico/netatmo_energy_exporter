@@ -1,6 +1,7 @@
 package netatmo_api
 
 import (
+	"strings"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -17,7 +18,6 @@ const (
 	tokenURL = "https://api.netatmo.com/oauth2/token"
 )
 
-// Config contains configuration for OAuth2
 type Config struct {
 	Username     string
 	Password     string
@@ -27,13 +27,11 @@ type Config struct {
 	Scopes       []string
 }
 
-// Client working with netatmo API
 type Client struct {
 	httpClient *http.Client
 	ctx        context.Context
 }
 
-// NewClient creates a new authenticated client
 func NewClient(ctx context.Context, cnf *Config) (*Client, error) {
 
 	httpClient, err := getOauthClient(ctx, cnf)
@@ -47,18 +45,75 @@ func NewClient(ctx context.Context, cnf *Config) (*Client, error) {
 	}, nil
 }
 
+
 func getOauthToken(ctx context.Context, oauth *oauth2.Config, cnf *Config) (*oauth2.Token, error) {
-	if cnf.RefreshToken == "" {
-		token, err := oauth.PasswordCredentialsToken(ctx, cnf.Username, cnf.Password)
-		if err != nil {
-			return nil, fmt.Errorf("could not get token for %v: %w", cnf.Username, err)
-		}
-		return token, nil
-	}
-	return &oauth2.Token{RefreshToken: cnf.RefreshToken}, nil
+    const tokenFile = "netatmo_token.json"
 
+    token := &oauth2.Token{}
+    if file, err := ioutil.ReadFile(tokenFile); err == nil {
+        if err := json.Unmarshal(file, token); err == nil && token.Valid() {
+            log.Println("Loaded valid token from file.")
+            return token, nil
+        }
+    }
+
+    if cnf.RefreshToken != "" {
+        data := url.Values{}
+        data.Set("grant_type", "refresh_token")
+        data.Set("refresh_token", cnf.RefreshToken)
+        data.Set("client_id", cnf.ClientID)
+        data.Set("client_secret", cnf.ClientSecret)
+
+        req, err := http.NewRequestWithContext(ctx, "POST", tokenURL, strings.NewReader(data.Encode()))
+        if err != nil {
+            log.Printf("failed to create refresh token request: %v", err)
+        } else {
+            req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+            resp, err := http.DefaultClient.Do(req)
+            if err != nil {
+                log.Printf("failed to refresh token: %v", err)
+            } else {
+                defer resp.Body.Close()
+
+                if resp.StatusCode == http.StatusOK {
+                    if err := json.NewDecoder(resp.Body).Decode(token); err == nil {
+                        log.Println("Token refreshed successfully.")
+
+                        // Save token to file
+                        if file, err := json.Marshal(token); err == nil {
+                            _ = ioutil.WriteFile(tokenFile, file, 0644)
+                            log.Println("Token saved to file.")
+                        } else {
+                            log.Printf("failed to save token to file: %v", err)
+                        }
+
+                        return token, nil
+                    }
+                    log.Printf("failed to decode refreshed token response: %v", err)
+                } else {
+                    body, _ := ioutil.ReadAll(resp.Body)
+                    log.Printf("failed to refresh token, status: %d, body: %s", resp.StatusCode, string(body))
+                }
+            }
+        }
+    }
+
+    log.Println("Falling back to password authentication.")
+    token, err := oauth.PasswordCredentialsToken(ctx, cnf.Username, cnf.Password)
+    if err != nil {
+        return nil, fmt.Errorf("could not get token for %v: %w", cnf.Username, err)
+    }
+
+    if file, err := json.Marshal(token); err == nil {
+        _ = ioutil.WriteFile(tokenFile, file, 0644)
+        log.Println("Token saved to file.")
+    } else {
+        log.Printf("failed to save token to file: %v", err)
+    }
+
+    return token, nil
 }
-
 func getOauthClient(ctx context.Context, cnf *Config) (*http.Client, error) {
 	oauth := &oauth2.Config{
 		ClientID:     cnf.ClientID,
