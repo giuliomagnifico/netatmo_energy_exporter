@@ -54,8 +54,9 @@ Run the exporter with your credentials. Example:
 It will create a new `netatmo_token.json` file containing something like:
 
   ```json
-  {"access_token":"12345|54321","refresh_token":"67890|09876","expiry":"0001-01-01T00:00:00Z"}
+  {"access_token":"12345|54321","refresh_token":"67890|09876","expiry":"2024-12-07T18:29:27.981698608+01:00"}
 ```
+You can change the year from 2024 to 2025, or to whatever you want, to extend the expiration time.
 
 ⚠️ *This fork has been tested with compilation but not with Docker* ⚠️
  
