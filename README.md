@@ -18,7 +18,7 @@ This exporter creates a `netatmo_token.json` file to store the access token, ref
 1. Install Go on your machine if not already installed.
 2. Go to the [Netatmo Developer Portal](https://dev.netatmo.com/) and:
    - Create a new app.
-   - Add token credentials for `read_station` and `read_thermostat`.
+   - Add token credentials for `read_thermostat`.
    - Copy the generated *Refresh Token*.
 
 #### Installation
@@ -36,15 +36,11 @@ Compile the exporter. For example, for ARM (Raspberry Pi):
    
 #### Usage
 
+Write the *Refresh Token* to the `netatmo_token.json` in raw format, without quotes or anything else, just the text, like this: `123456|789123`
+
 Run the exporter with your credentials. Example:   
 ```
-./netatmo_energy_exporter \
-  --client-id 123456789 \
-  --client-secret 987654321 \
-  --refresh-token "123456789|987654321" \
-  --listen 0.0.0.0:2112 \
-  --username [your Netatmo username] \
-  --password [your Netatmo account password]
+./netatmo_energy_exporter --client-id 123456789 --client-secret 987654321 --listen 0.0.0.0:2112
 ```
 
 (`--listen` is optional and can be used to specify a different port)
@@ -55,8 +51,4 @@ It will create a new `netatmo_token.json` file containing something like:
 
   ```json
   {"access_token":"12345|54321","refresh_token":"67890|09876","expiry":"2024-12-07T18:29:27.981698608+01:00"}
-```
-
-
-⚠️ *This fork has been tested with compilation but not with Docker* ⚠️
- 
+``` 
