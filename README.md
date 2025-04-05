@@ -47,7 +47,7 @@ Run the exporter with your credentials. Example:
 
 #### Notes
 
-It will create a new `netatmo_token.json` file containing something like:
+It will save the access token, refresh token, and expiry date to `netatmo_token.json`, and it will be automatically renewed. Example:
 
   ```json
   {"access_token":"12345|54321","refresh_token":"67890|09876","expiry":"2024-12-07T18:29:27.981698608+01:00"}
