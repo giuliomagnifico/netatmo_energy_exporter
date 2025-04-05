@@ -58,7 +58,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Salvataggio automatico del nuovo token aggiornato
 	if client.Config.RefreshToken != refreshToken {
 		if err := saveToken(client.Config.RefreshToken); err != nil {
 			log.Printf("Error saving new token: %v", err)
